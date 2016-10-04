@@ -15,7 +15,7 @@ Parameters:
   - quantizationLevels - int between 1 and 256 used to quanitize the colors fo the image 
 
 ## Copy Move
-This algorithm ia an implementation of the "[Detection of Copy-Move Forgery in Digital Images](http://www.ws.binghamton.edu/fridrich/Research/copymove.pdf)" paper by Jessica Fridrich, 
+This algorithm is an implementation of the "[Detection of Copy-Move Forgery in Digital Images](http://www.ws.binghamton.edu/fridrich/Research/copymove.pdf)" paper by Jessica Fridrich, 
 David Soukal, and Jan Luká. It was modified to make it a bit more performant, but it still needs a lot of work.
 
 ```
