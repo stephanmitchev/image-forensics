@@ -99,8 +99,6 @@ public class CopyMove {
 
         int a = 0;
         while (a < matrix.size()) {
-            if (a % 1000 == 0)
-                System.out.println("a: " + a);
 
             if (matrix.get(a).getStdDev() > minStdDev) {
                 ImageBlock ibA = matrix.get(a);
@@ -151,7 +149,7 @@ public class CopyMove {
         for (int i = 0; i < 10 && i < keys.size(); i++) {
 
             List<ImageBlock> blocks = symmetricShiftVectors.get(countSymmetricKeyVectors.get(keys.get(i)));
-            System.out.println("Shift: " + countSymmetricKeyVectors.get(keys.get(i)) + "; Count: " + keys.get(i) + "; StdDev: " + blocks.get(0).getStdDev());
+            //System.out.println("Shift: " + countSymmetricKeyVectors.get(keys.get(i)) + "; Count: " + keys.get(i) + "; StdDev: " + blocks.get(0).getStdDev());
 
             for (ImageBlock b : blocks) {
                 for (int y = Math.max(0, b.oy - heatRadius); y < Math.min(cpResult.getHeight(), b.oy + ImageBlock.sideY + heatRadius); y++) {

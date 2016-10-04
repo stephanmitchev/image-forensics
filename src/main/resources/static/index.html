@@ -3,72 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <title>Image Forensic Services</title>
+    <!-- JQuery CDN -->
     <script src="//code.jquery.com/jquery-3.1.0.min.js"
             integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
 
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+
     <style>
-        .analyzedImage{
-            margin: 5px 5px 5px 5px;
-            width: 300px;
+        .navbar-brand {
+            font-weight: bold;
+        }
+
+        #imageDropZone {
+            border: 2px dashed lightgray;
+            border-radius: 10px;
+            width: 100%;
+            height: 300px;
+            color: darkgray;
+            text-align: center;
+            line-height: 300px
+        }
+
+        .imageLayer {
+            position:absolute;
+            top: 42px;
+            left: 0px;
+            width:100%;
         }
     </style>
     <script>
 
-        var handleDragOver = function(evt) {
+        var imageCache = {
+            original: null,
+
+        }
+
+        var handleDragOver = function (evt) {
             evt.stopPropagation();
             evt.preventDefault();
             evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
         }
 
-        var handleFileSelect = function(evt) {
+        var handleFileSelect = function (evt) {
             evt.stopPropagation();
             evt.preventDefault();
 
-            var files = evt.dataTransfer.files; // FileList object.
+            var files = evt.dataTransfer != null
+                    ? evt.dataTransfer.files
+                    : evt.target.files; // FileList object.
 
             // files is a FileList of File objects. List some properties.
-            var output = [];
             if (files.length > 0 && files[0].type.match('image.*')) {
 
                 var reader = new FileReader();
 
-                reader.onload = (function(theFile) {
+                reader.onload = (function (theFile) {
 
-                    return function(e) {
+                    return function (e) {
 
-                        var split = e.target.result.split("base64,")
+                        imageCache = {
+                            original: e.target.result
+                        }
 
-                        var fd;
-                        fd = new FormData();
-                        fd.append('image', split[1]);
-                        fd.append('ampFactor', 2);
-                        $.ajax({url: './ela',method: "POST",cache: false,contentType: false,processData: false,data: fd})
-                                .done(function( result ) { $("#ela2").prop("src", "data:image/jpeg;base64,"+result.image); });
-
-                        fd = new FormData();
-                        fd.append('image', split[1]);
-                        fd.append('ampFactor', 6);
-                        $.ajax({url: './ela',method: "POST",cache: false,contentType: false,processData: false,data: fd})
-                                .done(function( result ) { $("#ela6").prop("src", "data:image/jpeg;base64,"+result.image); });
-
-                        fd = new FormData();
-                        fd.append('image', split[1]);
-                        fd.append('minShift', 10);
-                        $.ajax({url: './copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
-                                .done(function( result ) { $("#cm10").prop("src", "data:image/jpeg;base64,"+result.image); });
-
-                        fd = new FormData();
-                        fd.append('image', split[1]);
-                        fd.append('minShift', 25);
-                        $.ajax({url: './copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
-                                .done(function( result ) { $("#cm25").prop("src", "data:image/jpeg;base64,"+result.image); });
-
-                        fd = new FormData();
-                        fd.append('image', split[1]);
-                        fd.append('minShift', 50);
-                        $.ajax({url: './copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
-                                .done(function( result ) { $("#cm50").prop("src", "data:image/jpeg;base64,"+result.image); });
-
+                        $("#original").prop("src", imageCache['original']);
 
                     };
                 })(files[0]);
@@ -78,26 +86,127 @@
 
         }
 
+        var showOriginal = function() {
+            $(".imageLayer").hide();
+            $("#original").prop("src", imageCache['original']).show();
+
+        }
+
+        var computeEla = function (ampFactor) {
+            var key = 'ela' + ampFactor;
+            if (imageCache[key] != null) {
+                $(".imageLayer").hide();
+                $("#" + key).prop("src", imageCache[key]).show();
+            }
+            else if (imageCache['original'] == null) {
+                alert("Drag over an image to be analyzed.");
+            }
+            else {
+                var split = imageCache['original'].split("base64,");
+                var fd = new FormData();
+                fd.append('image', split[1]);
+                fd.append('ampFactor', ampFactor);
+                $.ajax({
+                            url: './ela',
+                            method: "POST",
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: fd,
+                            context:this
+                        })
+                        .done(function (result) {
+                            imageCache[key] = "data:image/jpeg;base64," + result.image;
+
+                            computeEla(ampFactor);
+
+                        });
+            }
+        }
+
+
+        var computeCM = function (minShift) {
+            var key = 'cm' + minShift;
+            if (imageCache[key] != null) {
+                $(".imageLayer").hide();
+                $("#" + key).prop("src", imageCache[key]).show();
+            }
+            else if (imageCache['original'] == null) {
+                alert("Drag over an image to be analyzed.");
+            }
+            else {
+                var split = imageCache['original'].split("base64,");
+                var fd = new FormData();
+                fd.append('image', split[1]);
+                fd.append('minShift', minShift);
+                $.ajax({
+                            url: './copymove',
+                            method: "POST",
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: fd,
+                            context:this
+                        })
+                        .done(function (result) {
+                            imageCache[key] = "data:image/jpeg;base64," + result.image;
+                            computeCM(minShift);
+
+                        });
+            }
+        }
+
 
     </script>
 
 </head>
 <body>
-<div id="imageDropZone" style="border: 2px dotted lightgray; border-radius: 10px; width: 200px; height:50px; color:darkgray; text-align: center; line-height: 45px">
-    Drop image here
-</div>
-<img class="analyzedImage" src="" id="ela2" />
-<img class="analyzedImage" src="" id="ela6" />
-<img class="analyzedImage" src="" id="cm10" />
-<img class="analyzedImage" src="" id="cm25" />
-<img class="analyzedImage" src="" id="cm50" />
+<header>
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <span class="navbar-brand">
+                    Image Forensics
+                </span>
+            </div>
+        </div>
+    </nav>
+</header>
+<section id="sourceImageSection">
+    <div class="container">
+        <div class="col-xs-12">
+            <ul class="nav nav-tabs">
+                <li role="presentation"><a href="javascript:showOriginal()">Original</a></li>
+                <li role="presentation"><a href="javascript:computeEla(2)">ELA x2</a></li>
+                <li role="presentation"><a href="javascript:computeEla(6)">ELA x6</a></li>
+                <li role="presentation"><a href="javascript:computeCM(10)">CM >10px</a></li>
+                <li role="presentation"><a href="javascript:computeCM(50)">CM >50px</a></li>
+            </ul>
+
+            <div id="imageDropZone">
+                <img class="imageLayer" src="" id="original"/>
+                <img class="imageLayer" src="" id="ela2"/>
+                <img class="imageLayer" src="" id="ela6"/>
+                <img class="imageLayer" src="" id="cm10"/>
+                <img class="imageLayer" src="" id="cm50"/>
+                <div id="imageDropZonePrompt">
+                    Drop image here
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
 
 <script>
     $(document).ready(function () {
 
-        $("#imageDropZone").each(function() {
+        $("#imageDropZone").each(function () {
             this.addEventListener('dragover', handleDragOver, false);
             this.addEventListener('drop', handleFileSelect, false);
+        });
+        $("#imageBrowse").each(function () {
+            this.addEventListener('change', handleFileSelect, false);
         });
 
     });
