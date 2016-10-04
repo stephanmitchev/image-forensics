@@ -42,31 +42,31 @@
                         fd = new FormData();
                         fd.append('image', split[1]);
                         fd.append('ampFactor', 2);
-                        $.ajax({url: '/ela',method: "POST",cache: false,contentType: false,processData: false,data: fd})
+                        $.ajax({url: './ela',method: "POST",cache: false,contentType: false,processData: false,data: fd})
                                 .done(function( result ) { $("#ela2").prop("src", "data:image/jpeg;base64,"+result.image); });
 
                         fd = new FormData();
                         fd.append('image', split[1]);
                         fd.append('ampFactor', 6);
-                        $.ajax({url: '/ela',method: "POST",cache: false,contentType: false,processData: false,data: fd})
+                        $.ajax({url: './ela',method: "POST",cache: false,contentType: false,processData: false,data: fd})
                                 .done(function( result ) { $("#ela6").prop("src", "data:image/jpeg;base64,"+result.image); });
 
                         fd = new FormData();
                         fd.append('image', split[1]);
                         fd.append('minShift', 10);
-                        $.ajax({url: '/copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
+                        $.ajax({url: './copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
                                 .done(function( result ) { $("#cm10").prop("src", "data:image/jpeg;base64,"+result.image); });
 
                         fd = new FormData();
                         fd.append('image', split[1]);
                         fd.append('minShift', 25);
-                        $.ajax({url: '/copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
+                        $.ajax({url: './copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
                                 .done(function( result ) { $("#cm25").prop("src", "data:image/jpeg;base64,"+result.image); });
 
                         fd = new FormData();
                         fd.append('image', split[1]);
                         fd.append('minShift', 50);
-                        $.ajax({url: '/copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
+                        $.ajax({url: './copymove',method: "POST",cache: false,contentType: false,processData: false,data: fd})
                                 .done(function( result ) { $("#cm50").prop("src", "data:image/jpeg;base64,"+result.image); });
 
 

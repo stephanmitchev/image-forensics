@@ -7,13 +7,13 @@ import ij.io.FileSaver;
 import ij.process.ColorProcessor;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Created by stephan on 10/3/16.
@@ -33,7 +33,7 @@ public class CopyMove {
         }
 
         // Decode the image bytes
-        BufferedImage imgSrc = null;
+        BufferedImage imgSrc;
         try {
             imgSrc = ImageIO.read(new ByteArrayInputStream(bytes));
         } catch (IOException e) {
@@ -87,16 +87,13 @@ public class CopyMove {
             }
         }
 
-        Collections.sort(matrix, (p1, p2) -> p1.compareTo(p2));
-
+        matrix.sort((p1, p2) -> p1.compareTo(p2));
 
         for (int i = 0; i < cpO.getPixelCount(); i++) {
             int color = cpO.get(i);
             cpResult.set(i, ColorUtils.getColor(ColorUtils.getRed(color) / 2, ColorUtils.getGreen(color) / 2, ColorUtils.getBlue(color) / 2));
         }
 
-        //Map<Integer, List<ImageBlock>> shiftVectors = new HashMap<>();
-        //Map<String, List<ImageBlock>> charShiftVectors = new HashMap<>();
         Map<SymmetricKey, List<ImageBlock>> symmetricShiftVectors = new HashMap<>();
 
 
@@ -117,7 +114,7 @@ public class CopyMove {
                         ImageBlock ibB = matrix.get(b);
                         if (ibA.distance(ibB) >= minShift) {
 
-                            SymmetricKey sk = new SymmetricKey(Math.abs(ibA.ox - ibB.ox), Math.abs(ibA.oy - ibB.oy));
+                            SymmetricKey sk = new SymmetricKey(Math.abs(ibA.ox - ibB.ox), Math.abs(ibA.oy - ibB.oy), (float)ibA.getStdDev());
 
                             if (!symmetricShiftVectors.containsKey(sk)) {
                                 symmetricShiftVectors.put(sk, new ArrayList<>());
@@ -148,20 +145,20 @@ public class CopyMove {
             countSymmetricKeyVectors.put(idx, sk);
         }
 
-        List<Integer> keys = new ArrayList(countSymmetricKeyVectors.keySet());
-        Collections.sort(keys, (p1, p2) -> -p1.compareTo(p2));
+        List<Integer> keys = new ArrayList<>(countSymmetricKeyVectors.keySet());
+        Collections.sort(keys, (p1, p2) -> -(new Float(p1 * countSymmetricKeyVectors.get(p1).getWeight())).compareTo(p2 * countSymmetricKeyVectors.get(p2).getWeight()));
 
         for (int i = 0; i < 10 && i < keys.size(); i++) {
 
-            System.out.println("Shift: " + countSymmetricKeyVectors.get(keys.get(i)) + "; Count: " + keys.get(i));
             List<ImageBlock> blocks = symmetricShiftVectors.get(countSymmetricKeyVectors.get(keys.get(i)));
+            System.out.println("Shift: " + countSymmetricKeyVectors.get(keys.get(i)) + "; Count: " + keys.get(i) + "; StdDev: " + blocks.get(0).getStdDev());
 
             for (ImageBlock b : blocks) {
                 for (int y = Math.max(0, b.oy - heatRadius); y < Math.min(cpResult.getHeight(), b.oy + ImageBlock.sideY + heatRadius); y++) {
                     for (int x = Math.max(0, b.ox - heatRadius); x < Math.min(cpResult.getWidth(), b.ox + ImageBlock.sideX + heatRadius); x++) {
 
                         int color = cpResult.get(x, y);
-                        float dist = (float)Math.sqrt((x - b.ox - ImageBlock.sideX/2) * (x - b.ox - ImageBlock.sideX/2) +                                (y - b.oy - ImageBlock.sideY/2) * (y - b.oy - ImageBlock.sideY/2));
+                        float dist = (float)Math.sqrt((x - b.ox - ImageBlock.sideX/2) * (x - b.ox - ImageBlock.sideX/2) +  (y - b.oy - ImageBlock.sideY/2) * (y - b.oy - ImageBlock.sideY/2));
                         dist = Math.max(0, Math.min(1, 1 - dist / (ImageBlock.sideX + heatRadius)));
 
                         cpResult.set(x, y, ColorUtils.getColor(
@@ -177,16 +174,19 @@ public class CopyMove {
 
         String file = String.format("%s/%s.jpg", System.getProperty("java.io.tmpdir"), UUID.randomUUID().toString());
         FileSaver fs = new FileSaver(new ImagePlus("result", cpResult));
-        fs.setJpegQuality(80);
+        FileSaver.setJpegQuality(80);
         fs.saveAsJpeg(file);
 
         try {
             image = FileUtils.encodeFileToBase64Binary(file);
             result = "success";
         } catch (IOException e) {
+            Logger.getAnonymousLogger().warning("Cannot write result temp file");
         }
 
-        new File(file).delete();
+        if (!new File(file).delete()) {
+            Logger.getAnonymousLogger().warning("Cannot delete result temp file");
+        }
 
     }
 

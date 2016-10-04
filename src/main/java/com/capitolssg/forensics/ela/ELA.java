@@ -3,7 +3,6 @@ package com.capitolssg.forensics.ela;
 import com.capitolssg.forensics.util.ColorUtils;
 import com.capitolssg.forensics.util.FileUtils;
 import ij.ImagePlus;
-import ij.io.FileOpener;
 import ij.io.FileSaver;
 import ij.io.Opener;
 import ij.process.ColorProcessor;
@@ -12,10 +11,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Base64;
 import java.util.UUID;
 
 /**

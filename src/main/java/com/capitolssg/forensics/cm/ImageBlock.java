@@ -16,9 +16,6 @@ public class ImageBlock implements Comparable<ImageBlock> {
     public float variance;
     public float mean;
 
-    public List<Integer> getPixels() {
-        return pixels;
-    }
     public void setPixels(List<Integer> pixels) {
         this.pixels = new ArrayList<>(pixels);
 
@@ -36,12 +33,6 @@ public class ImageBlock implements Comparable<ImageBlock> {
 
     public ImageBlock() {
 
-    }
-
-
-    double getMean()
-    {
-        return mean;
     }
 
     double getVariance()

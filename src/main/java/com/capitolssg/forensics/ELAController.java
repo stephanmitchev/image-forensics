@@ -1,8 +1,6 @@
 package com.capitolssg.forensics;
 
 import com.capitolssg.forensics.ela.ELA;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
