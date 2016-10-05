@@ -11,8 +11,8 @@ POST /ela
 ```
 Parameters:
   - image - a base64 representation of the image bytes
-  - ampFactor - amplification multiplier to enhance the differences
-  - quantizationLevels - int between 1 and 256 used to quanitize the colors fo the image 
+  - ampFactor (default 5) - amplification multiplier to enhance the differences
+  - quantizationLevels (default 128) - int between 1 and 256 used to quanitize the colors fo the image 
 
 ## Copy Move
 This algorithm is an implementation of the "[Detection of Copy-Move Forgery in Digital Images](http://www.ws.binghamton.edu/fridrich/Research/copymove.pdf)" paper by Jessica Fridrich, 
@@ -22,13 +22,14 @@ David Soukal, and Jan Luká. It was modified to make it a bit more performant, b
 POST /copymove
 ```
 Parameters:
-  - image - a base64 representation of the image bytes
-  - maxDifference - maximum average difference between grayscale values of 8x8 blocks of pixels (e.g. 128 allows for each pixel to vary by 2 color values)
-  - minShift - minimum distance between candidate repeating blocks
-  - minStdDev - minimum standard deviation computed over the 8x8 block of pixels 
-  - heatRadius - fade-out radius of the heat map marker
-  - quantizationLevels - int between 1 and 256 used to quanitize the colors fo the image 
-  
+  - image (required) - a base64 representation of the image bytes
+  - maxDifference (default 128) - maximum average difference between grayscale values of 8x8 blocks of pixels (e.g. 128 allows for each pixel to vary by 2 color values)
+  - minShift (default 10) - minimum distance between candidate repeating blocks
+  - minStdDev (default 10) - minimum standard deviation computed over the 8x8 block of pixels 
+  - quantizationLevels (default 128) - int between 1 and 256 used to quanitize the colors fo the image 
+  - heatRadius (default 10) - fade-out radius of the heat map marker
+  - suspectedCopies (default 10) - suspected number of copies within the image
+      
 ## Build
   1. Fork or download the source. 
   1. Run ``` mvn clean package ```

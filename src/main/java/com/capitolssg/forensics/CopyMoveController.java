@@ -19,10 +19,11 @@ public class CopyMoveController {
             @RequestParam(value="minShift", required = false, defaultValue = "10") float minShift,
             @RequestParam(value="minStdDev", required = false, defaultValue = "10") float minStdDev,
             @RequestParam(value="quantizationLevels", required = false, defaultValue = "128") int quantizationLevels,
-            @RequestParam(value="heatRadius", required = false, defaultValue = "10") int heatRadius
+            @RequestParam(value="heatRadius", required = false, defaultValue = "10") int heatRadius,
+            @RequestParam(value="suspectedCopies", required = false, defaultValue = "10") int suspectedCopies
 
-            ) {
+    ) {
         byte[] bytes = Base64Utils.decodeFromString(image);
-        return new CopyMove(bytes, maxDifference, minShift, minStdDev, quantizationLevels, heatRadius);
+        return new CopyMove(bytes, maxDifference, minShift, minStdDev, quantizationLevels, heatRadius, suspectedCopies);
     }
 }

@@ -76,7 +76,8 @@
                             original: e.target.result
                         }
 
-                        $("#original").prop("src", imageCache['original']);
+                        $(".imageLayer").hide();
+                        $("#original").prop("src", imageCache['original']).show();
 
                     };
                 })(files[0]);
