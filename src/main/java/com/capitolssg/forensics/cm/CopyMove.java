@@ -4,7 +4,6 @@ import com.capitolssg.forensics.util.ColorUtils;
 import com.capitolssg.forensics.util.FileUtils;
 import ij.ImagePlus;
 import ij.io.FileSaver;
-import ij.plugin.filter.Convolver;
 import ij.process.ColorProcessor;
 
 import javax.imageio.ImageIO;
@@ -89,19 +88,35 @@ public class CopyMove {
                     for (int x = Math.max(0, b.ox - heatRadius); x < Math.min(cpResult.getWidth(), b.ox + ImageBlock.sideX + heatRadius); x++) {
 
                         int color = cpResult.get(x, y);
-                        float dist = (float)Math.sqrt((x - b.ox - ImageBlock.sideX/2) * (x - b.ox - ImageBlock.sideX/2) +  (y - b.oy - ImageBlock.sideY/2) * (y - b.oy - ImageBlock.sideY/2));
+                        float dist = (float) Math.sqrt((x - b.ox - ImageBlock.sideX / 2) * (x - b.ox - ImageBlock.sideX / 2) + (y - b.oy - ImageBlock.sideY / 2) * (y - b.oy - ImageBlock.sideY / 2));
                         dist = Math.max(0, Math.min(1, 1 - dist / (ImageBlock.sideX + heatRadius)));
 
                         Color heatColor;
                         switch (i) {
-                            case 0: heatColor = Color.magenta; break;
-                            case 1: heatColor = Color.green; break;
-                            case 2: heatColor = Color.cyan; break;
-                            case 3: heatColor = Color.yellow; break;
-                            case 4: heatColor = Color.blue; break;
-                            case 5: heatColor = Color.white; break;
-                            case 6: heatColor = Color.pink; break;
-                            default: heatColor = Color.red; break;
+                            case 0:
+                                heatColor = Color.magenta;
+                                break;
+                            case 1:
+                                heatColor = Color.green;
+                                break;
+                            case 2:
+                                heatColor = Color.cyan;
+                                break;
+                            case 3:
+                                heatColor = Color.yellow;
+                                break;
+                            case 4:
+                                heatColor = Color.blue;
+                                break;
+                            case 5:
+                                heatColor = Color.white;
+                                break;
+                            case 6:
+                                heatColor = Color.pink;
+                                break;
+                            default:
+                                heatColor = Color.red;
+                                break;
                         }
                         cpResult.set(x, y, ColorUtils.getColor(
                                 Math.min(255, (int) (ColorUtils.getRed(color) + heatColor.getRed() / 25 * dist)),
@@ -184,25 +199,12 @@ public class CopyMove {
     private List<ImageBlock> createImageBlocks(List<Integer> diff, int width, int height) {
 
         List<ImageBlock> result = new ArrayList<>();
-
-        for (int y = 0; y < height - ImageBlock.sideY; y++) {
-            for (int x = 0; x < width - ImageBlock.sideX; x++) {
-                ImageBlock ib = new ImageBlock();
-                ib.ox = x;
-                ib.oy = y;
-
-                Integer[] px = new Integer[ImageBlock.sideX * ImageBlock.sideY];
-                for (int v = 0; v < ImageBlock.sideY; v++) {
-                    for (int u = 0; u < ImageBlock.sideX; u++) {
-                        int idx = (y + v) * width + x + u;
-                        px[v * ImageBlock.sideX + u] = diff.get(idx);
-                    }
-                }
-
-                ib.setPixels(Arrays.asList(px));
-                result.add(ib);
-            }
-        }
+        IntStream.range(0, diff.size())
+                //.parallel()
+                .filter(i -> (i % width < width - ImageBlock.sideX) && (i / width < height - ImageBlock.sideY))
+                .forEach(i -> {
+                    result.add(new ImageBlock(i, diff, width, height));
+                });
 
         return result;
     }
@@ -210,10 +212,10 @@ public class CopyMove {
     private List<Integer> quantizeImage(ColorProcessor cpO, int quantizationLevels) {
 
         List<Integer> results = IntStream
-                .of((int[])cpO.getPixels())
+                .of((int[]) cpO.getPixels())
                 .boxed()
                 .parallel()
-                .map(p -> (int)ColorUtils.quantize(0, 255, quantizationLevels, 0.4f*ColorUtils.getRed(p) + 0.3f*ColorUtils.getGreen(p) + 0.3f*ColorUtils.getBlue(p)))
+                .map(p -> (int) ColorUtils.quantize(0, 255, quantizationLevels, 0.4f * ColorUtils.getRed(p) + 0.3f * ColorUtils.getGreen(p) + 0.3f * ColorUtils.getBlue(p)))
                 .collect(Collectors.toList());
 
         return results;

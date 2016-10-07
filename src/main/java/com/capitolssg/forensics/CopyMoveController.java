@@ -15,12 +15,12 @@ public class CopyMoveController {
     @RequestMapping(path="/copymove")
     public CopyMove copyMove(
             @RequestParam(value="image") String image,
-            @RequestParam(value="maxDifference", required = false, defaultValue = "128") float maxDifference,
+            @RequestParam(value="maxDifference", required = false, defaultValue = "64") float maxDifference,
             @RequestParam(value="minShift", required = false, defaultValue = "10") float minShift,
             @RequestParam(value="minStdDev", required = false, defaultValue = "10") float minStdDev,
             @RequestParam(value="quantizationLevels", required = false, defaultValue = "128") int quantizationLevels,
             @RequestParam(value="heatRadius", required = false, defaultValue = "10") int heatRadius,
-            @RequestParam(value="suspectedCopies", required = false, defaultValue = "10") int suspectedCopies
+            @RequestParam(value="suspectedCopies", required = false, defaultValue = "20") int suspectedCopies
 
     ) {
         byte[] bytes = Base64Utils.decodeFromString(image);
