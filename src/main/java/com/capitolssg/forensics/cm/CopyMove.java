@@ -26,8 +26,16 @@ public class CopyMove {
     private String result;
     private String image;
 
+    private Logger logger = Logger.getLogger(CopyMove.class.toString());
+
+    long time = 0;
+
 
     public CopyMove(byte[] bytes, float maxDifference, float minShift, float minStdDev, int quantizationLevels, int heatRadius, int suspectedCopies) {
+
+        time = System.currentTimeMillis();
+
+        logger.info("Start time: " + 0);
 
         result = "error";
 
@@ -43,26 +51,47 @@ public class CopyMove {
         } catch (IOException e) {
             return;
         }
+        logger.info("Read complete: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
+
 
         ColorProcessor cpO = new ImagePlus("src", imgSrc).getProcessor().convertToColorProcessor();
 
         // Apply quantization on the colors
         List<Integer> diff = quantizeImage(cpO, quantizationLevels);
 
+        logger.info("Quantize complete: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
+
         // Create blocks and gather statistics
         List<ImageBlock> imageBlocks = createImageBlocks(diff, cpO.getWidth(), cpO.getHeight());
+
+        logger.info("Blocks Created: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
+
 
         // Sort by shift
         imageBlocks.sort((p1, p2) -> p1.compareTo(p2));
 
+        logger.info("Blocks sorted: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
+
+
         // Discover sequential blocks based on the distance function that match the parameters
-        // The symmetric key stores the StdDev as a weight parameter for later sorting
-        Map<SymmetricKey, List<ImageBlock>> symmetricShiftVectors = discoverCopies(imageBlocks, minStdDev, maxDifference, minShift);
+        // The symmetric key stores the StdDev and edge distance as a weight parameter for later sorting
+        Map<SymmetricKey, List<ImageBlock>> symmetricShiftVectors = discoverCopies(imageBlocks, minStdDev, maxDifference, minShift, cpO.getWidth(), cpO.getHeight());
+
+        logger.info("Copies discovered: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
 
         // Find out the count of blocks for each unique distance
         Map<Integer, SymmetricKey> countSymmetricKeyVectors = symmetricShiftVectors.keySet()
                 .parallelStream()
                 .collect(Collectors.toMap(i -> symmetricShiftVectors.get(i).size(), i -> i, (v1, v2) -> v1));
+
+        logger.info("Blocks counted: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
+
 
         // Perform weighted sort using the StdDev as a weight
         List<Integer> keys = countSymmetricKeyVectors.keySet()
@@ -70,12 +99,19 @@ public class CopyMove {
                 .sorted((p1, p2) -> -(new Float(p1 * countSymmetricKeyVectors.get(p1).getWeight())).compareTo(p2 * countSymmetricKeyVectors.get(p2).getWeight()))
                 .collect(Collectors.toList());
 
+        logger.info("Blocks sorted: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
+
+
         // Copy Original image and darken it
         ColorProcessor cpResult = new ColorProcessor(cpO.getWidth(), cpO.getHeight());
         IntStream.range(0, cpO.getPixelCount())
                 .mapToObj(p -> Arrays.asList(p, ColorUtils.getColor(ColorUtils.getRed(cpO.get(p)) / 2, ColorUtils.getGreen(cpO.get(p)) / 2, ColorUtils.getBlue(cpO.get(p)) / 2)))
                 .parallel()
                 .forEach(a -> cpResult.set(a.get(0), a.get(1)));
+
+        logger.info("Original darkened: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
 
 
         // Draw the findings
@@ -128,6 +164,10 @@ public class CopyMove {
             }
         }
 
+        logger.info("Result rendered: " + (System.currentTimeMillis() - time));
+        time = System.currentTimeMillis();
+
+
         // Save to encode and return
         String file = String.format("%s/%s.jpg", System.getProperty("java.io.tmpdir"), UUID.randomUUID().toString());
         FileSaver fs = new FileSaver(new ImagePlus("result", cpResult));
@@ -148,13 +188,16 @@ public class CopyMove {
         // Delete the temporary file
         new File(file).delete();
 
+        logger.info("File served and deleted: " + (System.currentTimeMillis() - time));
+
+
     }
 
-    private Map<SymmetricKey,List<ImageBlock>> discoverCopies(
+    private Map<SymmetricKey, List<ImageBlock>> discoverCopies(
             List<ImageBlock> imageBlocks,
             float minStdDev,
             float maxDifference,
-            float minShift) {
+            float minShift, int width, int height) {
 
         Map<SymmetricKey, List<ImageBlock>> result = new HashMap<>();
 
@@ -172,7 +215,19 @@ public class CopyMove {
                         ImageBlock ibB = imageBlocks.get(b);
                         if (ibA.distance(ibB) >= minShift) {
 
-                            SymmetricKey sk = new SymmetricKey(Math.abs(ibA.ox - ibB.ox), Math.abs(ibA.oy - ibB.oy), (float)ibA.getStdDev());
+                            int edgeDistance = Integer.MAX_VALUE;
+                            edgeDistance = Math.min(edgeDistance, ibA.ox);
+                            edgeDistance = Math.min(edgeDistance, ibA.oy);
+                            edgeDistance = Math.min(edgeDistance, width - ibA.ox - ImageBlock.sideX);
+                            edgeDistance = Math.min(edgeDistance, height - ibA.oy - ImageBlock.sideY);
+
+                            edgeDistance = Math.min(edgeDistance, ibB.ox);
+                            edgeDistance = Math.min(edgeDistance, ibB.oy);
+                            edgeDistance = Math.min(edgeDistance, width - ibB.ox - ImageBlock.sideX);
+                            edgeDistance = Math.min(edgeDistance, height - ibB.oy - ImageBlock.sideY);
+
+
+                            SymmetricKey sk = new SymmetricKey(Math.abs(ibA.ox - ibB.ox), Math.abs(ibA.oy - ibB.oy), (float) ibA.getStdDev(), edgeDistance);
 
                             if (!result.containsKey(sk)) {
                                 result.put(sk, new ArrayList<>());
@@ -198,9 +253,9 @@ public class CopyMove {
 
     private List<ImageBlock> createImageBlocks(List<Integer> diff, int width, int height) {
 
-        List<ImageBlock> result = new ArrayList<>();
+        List<ImageBlock> result = Collections.synchronizedList(new ArrayList<>());
         IntStream.range(0, diff.size())
-                //.parallel()
+                .parallel()
                 .filter(i -> (i % width < width - ImageBlock.sideX) && (i / width < height - ImageBlock.sideY))
                 .forEach(i -> {
                     result.add(new ImageBlock(i, diff, width, height));

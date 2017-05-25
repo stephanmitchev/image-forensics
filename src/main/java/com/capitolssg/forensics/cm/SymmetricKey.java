@@ -8,15 +8,17 @@ public class SymmetricKey {
     private int x;
     private int y;
     private float weight;
+private float edgeDistance;
 
     public float getWeight() {
-        return weight;
+        return edgeDistance;
     }
 
-    public SymmetricKey(int x, int y, float weight) {
+    public SymmetricKey(int x, int y, float weight, int edgeDistance) {
         this.x = x;
         this.y = y;
         this.weight = weight;
+        this.edgeDistance = 1/ new Float(Math.log(edgeDistance));
     }
 
     public String toString() {
